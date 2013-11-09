@@ -13,7 +13,7 @@ fp = codecs.open('record2.txt', 'w', 'utf-8')
 
 class StockSpider2(BaseSpider):
     #设置爬虫名称
-    name = "stocks2"
+    name = "stocks2_nosql"
     #设置起始URL列表
     start_urls = ["http://quote.eastmoney.com/center/list.html#10"]
  
@@ -21,8 +21,9 @@ class StockSpider2(BaseSpider):
     def parse(self, response):
         req = []
         hxs = HtmlXPathSelector(response)
-        #通过XPath选出公交车路线分类页面的URL
+        #通过CSV文件含有的股票代码确定URL
         result = []
+        #modify the file directory when you use.
         with open('/Users/white/crawler/stocks.csv','r') as f:
             for line in f:
                 result = line.split('\r')
@@ -30,10 +31,10 @@ class StockSpider2(BaseSpider):
             #print size(result)
 
         stock_urls = []
+        #using the a csv file to append the stock_urls list.
         for k in range(0,841):
             stock_urls.append("http://quote.eastmoney.com/sh"+result[k]+".html")
         print stock_urls
-        
         
         print 'stock_urls =', stock_urls
         
@@ -42,26 +43,26 @@ class StockSpider2(BaseSpider):
             new_url = url
             print new_url
             print "[parse]new_url = %s" % (new_url)
-            #创建对应的页面的Request对象，设定回调函数为parse_cat，利用parse_cat处理返回的页面
+            #创建对应的页面的Request对象，设定回调函数为parse_info，处理返回的页面
             r = Request(new_url, callback=self.parse_info)
             req.append(r)
         return req
  
     def parse_info(self, response):
         hxs = HtmlXPathSelector(response)
-        #利用XPath抽取出线路名称:line_name
+        #利用XPath抽取出股票名称:stock_name
         stock_name = hxs.select('/html/body/div["qbox"]/div["qmain"]/div["rol"]/div["base"]/div["tit"]/div["coll"]/a/h1/text()').extract()
         print 'stock name =',stock_name[0]
         print ''
-        #利用XPath抽取路线中经过的站点名称:route
+        #利用XPath抽取股票信息:info
         a = hxs.select('/html/body/div["qbox"]/div["qmain"]/div["rcol"]/div["qmbox"]/div["mlbox"]/div["gsjjsj"]/table//td["vds"]/text()').extract()
         info = [a[1],a[3],a[5],a[6],a[7],a[8],a[10],a[11],a[12],a[14],a[16],a[18]]
         
-        #结果写入到记录的文件之中
+        #结果写入到记录的txt文件之中
         fp.write(stock_name[0].strip())
         fp.write('\r\n')
         opt = ''
-        #每个站点之间用|隔开
+        #用,隔开
         for name in info:
             opt += (name.strip() + ',')
         opt = opt[:-1]
